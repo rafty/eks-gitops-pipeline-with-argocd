@@ -1,7 +1,7 @@
 import aws_cdk as core
 import aws_cdk.assertions as assertions
 
-from eks_gitops_pipeline_with_argocd.eks_gitops_pipeline_with_argocd_stack import EksGitopsPipelineWithArgocdStack
+from _stacks.eks_gitops_pipeline_with_argocd_stack import EksGitopsPipelineWithArgocdStack
 
 # example tests. To run these tests, uncomment this file along with the example
 # resource in eks_gitops_pipeline_with_argocd/eks_gitops_pipeline_with_argocd_stack.py

@@ -27,6 +27,34 @@
     "@aws-cdk/core:target-partitions": [
       "aws",
       "aws-cn"
-    ]
+    ],
+    "dev": {
+      "env": {
+          "name": "dev"
+      },
+      "eks": {
+          "name": "app_eks",
+          "instance_type": "t3.small"
+      },
+      "vpc": {
+          "name": "gitops_pipeline"
+      }
+    },
+    "gitops": {
+      "env": {
+          "name": "gitops"
+      },
+      "eks": {
+          "name": "gitops_eks",
+          "instance_type": "t3.medium"
+      },
+      "vpc": {
+          "name": "gitops_pipeline"
+      },
+      "argocd": {
+        "enable": true,
+        "name": "argocd"
+      }
+    }
   }
 }
