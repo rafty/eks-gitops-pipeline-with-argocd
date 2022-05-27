@@ -11,6 +11,7 @@ try:
         region=os.environ.get("CDK_DEPLOY_REGION", os.environ["CDK_DEFAULT_REGION"]),
     )
 except KeyError as e:
+    # Todo: 削除すること
     # todo: The following is for debugging of debugger
     env = cdk.Environment(
         account='338456725408',
@@ -22,12 +23,12 @@ eks_cluster_stack_dev = EksClusterStack(
     app,
     "EksAppStack",
     sys_env='dev',
-    env=env)
+    env=env)  # cdk.Environmentにすること
 
 eks_cluster_stack_gitops = EksClusterStack(
     app,
     "EksGitopsStack",
     sys_env='gitops',
-    env=env)
+    env=env)  # cdk.Environmentにすること
 
 app.synth()

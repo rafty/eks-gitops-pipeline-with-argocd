@@ -1,6 +1,7 @@
 import json
 from constructs import Construct
 from aws_cdk import aws_iam
+from aws_cdk import aws_eks
 
 
 class AwsLoadBalancerController(Construct):
@@ -13,8 +14,7 @@ class AwsLoadBalancerController(Construct):
         super().__init__(scope, id)
 
         self.region = kwargs.get('region')
-        self.cluster = kwargs.get('cluster')
-        pass
+        self.cluster: aws_eks.Cluster = kwargs.get('cluster')
 
     def deploy(self):
         # ----------------------------------------------------------
@@ -24,8 +24,6 @@ class AwsLoadBalancerController(Construct):
         #   - Deployment
         #   - Service
         # ----------------------------------------------------------
-        # _cluster = self.resources.get('cluster')
-        # awslbcontroller_sa = _cluster.add_service_account(
         awslbcontroller_sa = self.cluster.add_service_account(
             'LBControllerServiceAccount',
             name='aws-load-balancer-controller',  # fixed name
@@ -42,22 +40,16 @@ class AwsLoadBalancerController(Construct):
             self, 'AWSLoadBalancerControllerIAMPolicy', statements=statements)
         policy.attach_to_role(awslbcontroller_sa.role)
 
-        # vpc = self.resources.get('vpc')
-
-        # aws_lb_controller_chart = _cluster.add_helm_chart(
         aws_lb_controller_chart = self.cluster.add_helm_chart(
             'AwsLoadBalancerController',
             chart='aws-load-balancer-controller',
-            release='aws-load-balancer-controller',  # Deploymentの名前になる。
+            release='aws-load-balancer-controller',  # Deployment name
             repository='https://aws.github.io/eks-charts',
             version=None,
             namespace='kube-system',
             create_namespace=False,
             values={
-                # 'clusterName': _cluster.cluster_name,
                 'clusterName': self.cluster.cluster_name,
-                # 'region': self.region,
-                # 'vpcId': vpc.vpc_id,
                 'serviceAccount': {
                     'name': awslbcontroller_sa.service_account_name,
                     'create': False,

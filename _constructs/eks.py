@@ -16,8 +16,8 @@ class EksCluster(Construct):
     def __init__(self, scope: Construct, id: str, config: Config) -> None:
         super().__init__(scope, id)
 
-        self.config = config
-        self.cluster = None
+        self.config: Config = config
+        self.cluster: aws_eks.Cluster = None
 
     def provisioning(self):
         i_vpc = aws_ec2.Vpc.from_lookup(self, 'VPC', vpc_name=self.config.vpc.name)
@@ -47,17 +47,17 @@ class EksCluster(Construct):
         #         groups=['system:masters']
         # )
 
-        # ------------------------------------------------
+        # --------------------------------------------------------------------
         # EKS Add On
         #   - AWS Load Balancer Controller
         #   - External DNS
         #   - CloudWatch Container Insight Metrics
         #   - CloudWatch Container Insight Logs
-        # ------------------------------------------------
+        # --------------------------------------------------------------------
         alb_ctl = AwsLoadBalancerController(
             self,
             'AwsLbController',
-            region=self.config.env.region,
+            region=self.config.aws_env.region,
             cluster=self.cluster)
         alb_ctl.deploy()
 
@@ -70,13 +70,13 @@ class EksCluster(Construct):
         insight_metrics = CloudWatchContainerInsightsMetrics(
             self,
             'CloudWatchInsightsMetrics',
-            region=self.config.env.region,
+            region=self.config.aws_env.region,
             cluster=self.cluster)
         insight_metrics.deploy()
 
         insight_logs = CloudWatchContainerInsightsLogs(
             self,
             'CloudWatchInsightLogs',
-            region=self.config.env.region,
+            region=self.config.aws_env.region,
             cluster=self.cluster)
         insight_logs.deploy()

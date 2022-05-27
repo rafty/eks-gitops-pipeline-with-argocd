@@ -2,26 +2,24 @@ import json
 import yaml
 from constructs import Construct
 from aws_cdk import aws_iam
+from aws_cdk import aws_eks
 
 
 class CloudWatchContainerInsightsMetrics(Construct):
     # ----------------------------------------------------------
     # Cloudwatch Container Insights - Metrics / CloudWatch Agent
     # ----------------------------------------------------------
-
     def __init__(self, scope: Construct, id: str, **kwargs) -> None:
         super().__init__(scope, id)
 
-        self.region = kwargs.get('region')
-        self.cluster = kwargs.get('cluster')
+        self.region: str = kwargs.get('region')
+        self.cluster: aws_eks.Cluster = kwargs.get('cluster')
 
     def deploy(self):
         # CloudWatch Agent
         # namespace: amazon-cloudwatch -> kube-system
         # See more info 'https://docs.aws.amazon.com/AmazonCloudWatch/latest'
         #               'monitoring/Container-Insights-setup-metrics.html'
-
-        # _cluster: aws_eks.Cluster = self.resources.get('cluster')
 
         # Create the Service Account
         cloudwatch_container_insight_sa: aws_iam.Role = \

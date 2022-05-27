@@ -1,4 +1,5 @@
 from constructs import Construct
+from util.configure.config_aws_env import ConfigAwsEnv
 from util.configure.config_vpc import ConfigVpc
 from util.configure.config_eks import ConfigEks
 from util.configure.config_env import ConfigEnv
@@ -6,14 +7,19 @@ from util.configure.config_gitops import ConfigArgocd
 
 
 class Config(Construct):
+    # Stackに必要なDefineを保管する。
+    # cdk.jsonに保管された環境毎の設定を保管する。
+    # Stack毎に異なるawsのaccount,regionなどはStackの最初に保管する。
+    # 動的な変数は管理しない。
 
-    def __init__(self, scope: Construct, id: str, sys_env: str) -> None:
+    def __init__(self, scope: Construct, id: str, sys_env: str, _aws_env: dict) -> None:
         super().__init__(scope, id)
 
-        self.sys_env = sys_env  # dev/stg/prd/ops/gitops
+        self.sys_env = sys_env  # dev, stg, prd, ops, gitops
+        self._aws_env = _aws_env  # region, account
+        self.env_config = self.node.try_get_context(key=sys_env)  # from cdk.json
 
-        self.env_config = self.node.try_get_context(key=sys_env)  # dev/stg/prd/ops/gitops
-
+        # todo: 削除すること
         if not self.env_config:
             # todo: The following is for debugging of debugger
             # sys_env: dev
@@ -47,6 +53,10 @@ class Config(Construct):
                     "name": "argocd"
                   }
                 }
+
+    @property
+    def aws_env(self):
+        return ConfigAwsEnv(self._aws_env)
 
     @property
     def env(self):

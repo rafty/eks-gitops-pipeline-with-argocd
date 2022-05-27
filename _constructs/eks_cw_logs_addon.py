@@ -1,17 +1,17 @@
 from constructs import Construct
 from aws_cdk import aws_iam
+from aws_cdk import aws_eks
 
 
 class CloudWatchContainerInsightsLogs(Construct):
     # ----------------------------------------------------------
     # Cloudwatch Container Insights - Logs / fluentbit
     # ----------------------------------------------------------
-
     def __init__(self, scope: Construct, id: str, **kwargs) -> None:
         super().__init__(scope, id)
 
         self.region = kwargs.get('region')
-        self.cluster = kwargs.get('cluster')
+        self.cluster: aws_eks.Cluster = kwargs.get('cluster')
 
     def deploy(self):
         # --------------------------------------------------------------
@@ -25,8 +25,6 @@ class CloudWatchContainerInsightsLogs(Construct):
         # 2. Service Account作成
         # --------------------------------------------------------------
 
-        # _cluster = self.resources.get('cluster')
-        # namespace: amazon-cloudwatch
         cloudwatch_namespace_name = 'amazon-cloudwatch'
         cloudwatch_namespace_manifest = {
             'apiVersion': 'v1',
@@ -81,10 +79,9 @@ class CloudWatchContainerInsightsLogs(Construct):
                 'cloudWatch': {
                     'enabled': True,
                     'match': "*",
-                    # 'region': self.region,
                     'region': self.region,
                     'logGroupName': f'/aws/eks/fluentbit-cloudwatch/logs/{self.cluster.cluster_name}/application',
-                    'logStreamPrefix': 'log-',  # 'fluent-bit-'
+                    'logStreamPrefix': 'log-',
                     'logRetentionDays': 7,
                     'autoCreateGroup': True,
                 },
