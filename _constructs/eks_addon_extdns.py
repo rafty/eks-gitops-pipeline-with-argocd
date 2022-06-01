@@ -11,10 +11,11 @@ class ExternalDnsController(Construct):
     def __init__(self, scope: Construct, id: str, **kwargs) -> None:
         super().__init__(scope, id)
 
+        self.check_parameter(kwargs)
+        self.region: str = kwargs.get('region')
         self.cluster: aws_eks = kwargs.get('cluster')
-        pass
 
-    def deploy(self):
+    def deploy(self, dependency: Construct) -> Construct:
         # External DNS Controller
         #
         # External DNS Controller sets A-Record in the Hosted Zone of Route 53.
@@ -32,6 +33,9 @@ class ExternalDnsController(Construct):
             name='external-dns',
             namespace='kube-system'
         )
+        if dependency is not None:
+            external_dns_service_account.node.add_dependency(dependency)
+
         external_dns_policy_statement_json_1 = {
             'Effect': 'Allow',
             'Action': [
@@ -83,3 +87,14 @@ class ExternalDnsController(Construct):
 
         )
         external_dns_chart.node.add_dependency(external_dns_service_account)
+
+        return external_dns_chart
+
+    @staticmethod
+    def check_parameter(key):
+        if type(key.get('region')) is not str:
+            raise TypeError('Must be set region.')
+        if key.get('region') == '':
+            raise TypeError('Must be set region.')
+        if type(key.get('cluster')) is not aws_eks.Cluster:
+            raise TypeError('Must be set Cluster.')

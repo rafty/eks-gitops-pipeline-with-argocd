@@ -12,10 +12,11 @@ class CloudWatchContainerInsightsMetrics(Construct):
     def __init__(self, scope: Construct, id: str, **kwargs) -> None:
         super().__init__(scope, id)
 
+        self.check_parameter(kwargs)
         self.region: str = kwargs.get('region')
         self.cluster: aws_eks.Cluster = kwargs.get('cluster')
 
-    def deploy(self):
+    def deploy(self, dependency: Construct) -> Construct:
         # CloudWatch Agent
         # namespace: amazon-cloudwatch -> kube-system
         # See more info 'https://docs.aws.amazon.com/AmazonCloudWatch/latest'
@@ -28,6 +29,8 @@ class CloudWatchContainerInsightsMetrics(Construct):
                 name='cloudwatch-agent',
                 namespace='kube-system',
             )
+        if dependency is not None:
+            cloudwatch_container_insight_sa.node.add_dependency(dependency)
 
         cloudwatch_container_insight_sa.role.add_managed_policy(
             aws_iam.ManagedPolicy.from_aws_managed_policy_name(
@@ -77,7 +80,19 @@ class CloudWatchContainerInsightsMetrics(Construct):
         # ----------------------------------------------------------
         # Apply multiple yaml documents. - cloudwatch-agent.yaml
         # ----------------------------------------------------------
+        cloudwatch_manifest = None
         with open('./manifests/cloudwatch-agent.yaml', 'r') as f:
             _yaml_docs = list(yaml.load_all(f, Loader=yaml.FullLoader))
         for i, _yaml_doc in enumerate(_yaml_docs, 1):
-            self.cluster.add_manifest(f'CWAgent{i}', _yaml_doc)
+            cloudwatch_manifest = self.cluster.add_manifest(f'CWAgent{i}', _yaml_doc)
+
+        return cloudwatch_manifest
+
+    @staticmethod
+    def check_parameter(key):
+        if type(key.get('region')) is not str:
+            raise TypeError('Must be set region.')
+        if key.get('region') == '':
+            raise TypeError('Must be set region.')
+        if type(key.get('cluster')) is not aws_eks.Cluster:
+            raise TypeError('Must be set Cluster.')

@@ -13,10 +13,12 @@ class AwsLoadBalancerController(Construct):
     def __init__(self, scope: Construct, id: str, **kwargs) -> None:
         super().__init__(scope, id)
 
+        self.check_parameter(kwargs)
         self.region = kwargs.get('region')
+        self.vpc_id = kwargs.get('vpc_id')
         self.cluster: aws_eks.Cluster = kwargs.get('cluster')
 
-    def deploy(self):
+    def deploy(self, dependency: Construct) -> Construct:
         # ----------------------------------------------------------
         # AWS LoadBalancer Controller for AWS ALB
         #   - Service Account
@@ -29,6 +31,8 @@ class AwsLoadBalancerController(Construct):
             name='aws-load-balancer-controller',  # fixed name
             namespace='kube-system',
         )
+        if dependency is not None:
+            awslbcontroller_sa.node.add_dependency(dependency)
 
         statements = []
         with open('./policies/awslbcontroller-policy.json') as f:
@@ -45,11 +49,13 @@ class AwsLoadBalancerController(Construct):
             chart='aws-load-balancer-controller',
             release='aws-load-balancer-controller',  # Deployment name
             repository='https://aws.github.io/eks-charts',
-            version=None,
+            # version=None,
             namespace='kube-system',
             create_namespace=False,
             values={
                 'clusterName': self.cluster.cluster_name,
+                'region': self.region,
+                'vpcId': self.vpc_id,
                 'serviceAccount': {
                     'name': awslbcontroller_sa.service_account_name,
                     'create': False,
@@ -58,5 +64,18 @@ class AwsLoadBalancerController(Construct):
                     }
                 }
             }
+            # timeout=None,
+            # wait=None
         )
         aws_lb_controller_chart.node.add_dependency(awslbcontroller_sa)
+
+        return aws_lb_controller_chart
+
+    @staticmethod
+    def check_parameter(key):
+        if type(key.get('region')) is not str:
+            raise TypeError('Must be set region.')
+        if key.get('region') == '':
+            raise TypeError('Must be set region.')
+        if type(key.get('cluster')) is not aws_eks.Cluster:
+            raise TypeError('Must be set Cluster.')
