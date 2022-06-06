@@ -1,3 +1,4 @@
+import aws_cdk
 from constructs import Construct
 from aws_cdk import aws_eks
 from aws_cdk import aws_ec2
@@ -10,6 +11,7 @@ from _constructs.eks_addon_extdns import  ExternalDnsController
 from _constructs.eks_addon_cwmetrics import CloudWatchContainerInsightsMetrics
 from _constructs.eks_addon_cwlogs import CloudWatchContainerInsightsLogs
 from _constructs.eks_service_argocd import ArgoCd
+# from _constructs.namespase_and_service_account.ns_and_sa import NamespaceAndServiceAccount
 
 
 class EksCluster(Construct):
@@ -24,7 +26,6 @@ class EksCluster(Construct):
 
     def provisioning(self):
         vpc = aws_ec2.Vpc.from_lookup(self, 'VPC1', vpc_name=self.config.vpc.name)
-
         # 注意: from_lookup()で参照したvpcのsubnetにtagが付けられなかった。
         # VPC作成CDKプロジェクトでTagを設定する。
         # self.tag_subnet_for_eks_cluster(vpc)
@@ -54,7 +55,39 @@ class EksCluster(Construct):
         #         groups=['system:masters']
         # )
 
+        self.cfn_outputs_eks_cluster_attributes()
         self.deploy_addons()
+
+    def cfn_outputs_eks_cluster_attributes(self):
+        _env = self.config.env.name  # dev, gitops
+        aws_cdk.CfnOutput(
+            self,
+            id=f'CfnOutputClusterName',
+            value=self.cluster.cluster_name,
+            description="Name of EKS Cluster",
+            export_name=f'EksClusterName-{_env}'
+        )
+        aws_cdk.CfnOutput(
+            self,
+            id=f'CfnOutputKubectlRoleArn',
+            value=self.cluster.kubectl_role.role_arn,
+            description="Kubectl Role Arn of EKS Cluster",
+            export_name=f'EksClusterKubectlRoleArn-{_env}'
+        )
+        aws_cdk.CfnOutput(
+            self,
+            id=f'CfnOutputKubectlSecurityGroupId',
+            value=self.cluster.kubectl_security_group.security_group_id,
+            description="Kubectl Security Group Id of EKS Cluster",
+            export_name=f'EksClusterKubectlSecurityGroupId-{_env}'
+        )
+        aws_cdk.CfnOutput(
+            self,
+            id=f'CfnOutputOidcProviderArn',
+            value=self.cluster.open_id_connect_provider.open_id_connect_provider_arn,
+            description="OIDC Provider ARN of EKS Cluster",
+            export_name=f'EksClusterOidcProviderArn-{_env}'
+        )
 
     def deploy_addons(self):
         # --------------------------------------------------------------------
@@ -112,7 +145,22 @@ class EksCluster(Construct):
             )
             dependency = argocd.deploy(dependency)
 
+    # def add_ns_and_sa(self):
     #
+    #     print(f'--------Add NS and SA------{self.config.env.name}-----------------')
+    #     # Todo: とりあえず if文を変える
+    #     if self.config.flask_backend:
+    #         ns_sa = NamespaceAndServiceAccount(
+    #             self,
+    #             'NamespaceAndServiceAccount',
+    #             region=self.config.aws_env.region,
+    #             cluster=self.cluster,
+    #             config=self.config
+    #         )
+    #         ns_sa.flask_backend_ns_sa()
+
+
+
     # def tag_subnet_for_eks_cluster(self, vpc):
     #     # 注意: from_lookup()で参照したvpcのsubnetにtagが付けられなかった。
     #     # VPCに複数のEKS Clusterがある場合、Tag:"kubernetes.io/cluster/cluster-name": "shared"が必要

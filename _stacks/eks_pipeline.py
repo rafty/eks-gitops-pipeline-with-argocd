@@ -21,13 +21,12 @@ class EksClusterStack(Stack):
         # _env = kwargs['env']
         # aws_env = {'region': _env.region, 'account': _env.account}
         # self.config = Config(self, 'Config', sys_env, aws_env)
-        self.config = Config(self, 'Config', sys_env, kwargs.get('env'))
+        self.config = Config(self, 'Config', sys_env=sys_env, _aws_env=kwargs.get('env'))
 
         # VPCは事前に作成してる。既存VPC名はCDK.jsonにある。
         _eks_cluster = EksCluster(self, 'EksCluster', config=self.config)
         _eks_cluster.provisioning()
-
-        # Todo: Argo CDを ops appとしてデプロイする。
+        # _eks_cluster.add_ns_and_sa()
 
     @staticmethod
     def check_parameter(key):

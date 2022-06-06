@@ -2,6 +2,7 @@
 import os
 import aws_cdk as cdk
 from _stacks.eks_pipeline import EksClusterStack
+from _stacks.flask_app_stack import FlaskBackendAppStack
 
 app = cdk.App()
 
@@ -18,16 +19,23 @@ except KeyError as e:
         region='ap-northeast-1',
     )
 
+eks_cluster_stack_gitops = EksClusterStack(
+    app,
+    "EksGitopsStack",
+    sys_env='gitops',
+    env=env)  # cdk.Environmentにすること
+
 eks_cluster_stack_dev = EksClusterStack(
     app,
     "EksAppStack",
     sys_env='dev',
     env=env)  # cdk.Environmentにすること
 
-eks_cluster_stack_gitops = EksClusterStack(
+flask_app_stack_dev = FlaskBackendAppStack(
     app,
-    "EksGitopsStack",
-    sys_env='gitops',
-    env=env)  # cdk.Environmentにすること
+    "FlaskBackendAppStack",
+    sys_env='dev',
+    env=env)
+flask_app_stack_dev.add_dependency(eks_cluster_stack_dev)
 
 app.synth()
